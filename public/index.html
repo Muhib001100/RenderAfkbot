@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MineBot Advanced Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Toggle (Mobile) -->
+        <button id="sidebarToggle" class="mobile-toggle">☰</button>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>MineBot <span>Pro</span></h2>
+            </div>
+
+            <div class="sidebar-scroll">
+                <section class="config-section">
+                    <details open>
+                        <summary>Global Settings</summary>
+                        <div class="field">
+                            <label>Server IP</label>
+                            <input type="text" id="host" value="play.dgnetwork.in" placeholder="mc.example.com">
+                        </div>
+                        <div class="field">
+                            <label>Version</label>
+                            <select id="version">
+                                <option value="1.8.9">1.8.9 (Standard)</option>
+                                <option value="1.12.2">1.12.2</option>
+                                <option value="auto">Auto-Detect</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>AFK Jump Interval</label>
+                            <select id="afkInterval">
+                                <option value="0">Never (Stand Still)</option>
+                                <option value="30000">Every 30 Seconds</option>
+                                <option value="120000">Every 2 Minutes</option>
+                                <option value="300000">Every 5 Minutes</option>
+                                <option value="600000">Every 10 Minutes</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>View Distance (Chunks)</label>
+                            <select id="viewDistance">
+                                <option value="tiny" selected>2 (Tiny) - Best for Replit</option>
+                                <option value="3">3 Chunks</option>
+                                <option value="short">4 (Short)</option>
+                                <option value="5">5 Chunks</option>
+                                <option value="6">6 Chunks</option>
+                                <option value="7">7 Chunks</option>
+                                <option value="normal">8 (Normal)</option>
+                                <option value="far">16 (Far) - Do Not Use</option>
+                            </select>
+                        </div>
+                        <div class="field"
+                            style="margin-top:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                                <input type="checkbox" id="liteMode">
+                                <span><strong>Lite Mode</strong> (No Walking/Inventory) - Use if crashing</span>
+                            </label>
+                        </div>
+                    </details>
+                </section>
+
+                <div class="divider"></div>
+
+                <section class="bot-builder">
+                    <div class="section-header">
+                        <h3>My Bots</h3>
+                        <button id="addBotBtn" class="btn-icon" title="Add New Bot">+</button>
+                    </div>
+                    <div id="configBotList" class="bot-config-list">
+                        <!-- Dynamic Rows -->
+                    </div>
+                </section>
+
+                <div class="action-group">
+                    <button id="startBtn" class="btn-primary">Start Selected</button>
+                    <button id="stopBtn" class="btn-danger">Stop All</button>
+                </div>
+
+                <div class="divider"></div>
+
+                <section class="active-bots-section">
+                    <h3>Active Sessions</h3>
+                    <div id="botList" class="bot-list">
+                        <!-- Bot Tabs -->
+                    </div>
+                </section>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="current-target">
+                    Target: <span id="activeBotName">Global Dashboard</span>
+                </div>
+            </header>
+
+            <div class="chat-container">
+                <div class="chat-window" id="logContainer">
+                    <div class="log-entry system"><span class="log-text">Initializing system...</span></div>
+                </div>
+            </div>
+
+            <footer class="control-panel">
+                <div class="controls-grid">
+                    <div class="movement-section">
+                        <div class="movement-pad">
+                            <div class="pad-row">
+                                <button class="move-btn" data-action="forward">W</button>
+                            </div>
+                            <div class="pad-row">
+                                <button class="move-btn" data-action="left">A</button>
+                                <button class="move-btn" data-action="back">S</button>
+                                <button class="move-btn" data-action="right">D</button>
+                            </div>
+                        </div>
+                        <div class="extra-actions">
+                            <button class="move-btn action-btn" data-action="jump">JUMP</button>
+                            <button class="move-btn action-btn" data-action="sneak" id="sneakBtn">SNEAK</button>
+                            <button class="move-btn action-btn" data-action="click">USE</button>
+                            <button class="move-btn action-btn gui-btn" onclick="showLastInventory()">GUI</button>
+                        </div>
+                    </div>
+
+                    <div class="chat-section">
+                        <div class="chat-input-wrapper">
+                            <input type="text" id="chatInput" placeholder="Message or command...">
+                            <button id="sendChatBtn" class="btn-primary">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <div id="cmdModal" class="modal-overlay">
+        <div class="modal-content">
+            <h4>Auto-Commands</h4>
+            <textarea id="cmdInput" placeholder="Enter one command per line..."></textarea>
+            <p class="hint">Executes 10s after joining.</p>
+            <div class="modal-footer">
+                <button onclick="document.getElementById('cmdModal').style.display='none'"
+                    class="btn-secondary">Cancel</button>
+                <button onclick="saveCmds()" class="btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="nameModal" class="modal-overlay">
+        <div class="modal-content name-modal">
+            <h4>Bot Profile</h4>
+            <div class="field">
+                <label>Username</label>
+                <input type="text" id="newBotName" placeholder="e.g. Miner_01">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeNameModal()" class="btn-secondary">Cancel</button>
+                <button onclick="confirmAddBot()" class="btn-primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="inventoryModal" class="modal-overlay">
+        <div class="inventory-window">
+            <div class="inventory-header">
+                <span id="invTitle">Inventory</span>
+                <button id="closeInv" class="btn-close">×</button>
+            </div>
+            <div class="inventory-grid-container" id="invGrid">
+                <!-- Slots -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

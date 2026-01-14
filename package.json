@@ -1,0 +1,18 @@
+{
+    "name": "minebot-web-manager",
+    "version": "2.0.0",
+    "description": "Web-based Multi-Bot Manager for Minecraft with BungeeCord support and detailed controls.",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "express": "^4.22.1",
+        "mineflayer": "^4.25.0",
+        "mineflayer-pathfinder": "^2.4.5",
+        "socket.io": "^4.8.3"
+    }
+}
