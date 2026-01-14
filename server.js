@@ -12,6 +12,8 @@ app.use(express.static('public'));
 
 // Store active bots: { [id]: botInstance }
 const bots = {};
+// Store pending reconnection timeouts: { [id]: timeoutId }
+const reconnectTimeouts = {};
 
 io.on('connection', (socket) => {
     console.log('Web Client Connected');
@@ -53,6 +55,13 @@ io.on('connection', (socket) => {
     // --- STOP BOTS ---
     socket.on('stop-bots', () => {
         console.log("Stopping all bots...");
+
+        // Clear all pending reconnection timeouts first
+        Object.keys(reconnectTimeouts).forEach(botId => {
+            clearTimeout(reconnectTimeouts[botId]);
+            delete reconnectTimeouts[botId];
+        });
+
         Object.keys(bots).forEach(botId => {
             const bot = bots[botId];
             if (bot) {
@@ -296,7 +305,11 @@ function createBot(botId, config) {
 
         // AUTO-RECONNECT
         if (config.reconnect) {
-            setTimeout(() => {
+            // Cancel any existing timeout for this bot just in case
+            if (reconnectTimeouts[botId]) clearTimeout(reconnectTimeouts[botId]);
+
+            reconnectTimeouts[botId] = setTimeout(() => {
+                delete reconnectTimeouts[botId]; // Remove from tracking
                 io.emit('log', { bot: botId, msg: `Attempting Reconnect...` });
                 createBot(botId, config);
             }, 8000); // 8s Retry delay
