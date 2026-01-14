@@ -238,8 +238,13 @@ socket.on('ghost-status', (data) => {
 });
 
 socket.on('health-update', (metrics) => {
+    const keys = Object.keys(metrics);
+    if (keys.length === 0) {
+        els.healthMonitor.innerHTML = '<div style="color:var(--text-muted); font-size:12px; grid-column:1/-1; text-align:center; padding:20px;">No Active Bots Tracking...</div>';
+        return;
+    }
     els.healthMonitor.innerHTML = '';
-    Object.keys(metrics).forEach(id => {
+    keys.forEach(id => {
         const m = metrics[id];
         const card = document.createElement('div');
         card.className = `health-card ${m.status.toLowerCase()}`;
