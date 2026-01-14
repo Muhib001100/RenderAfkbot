@@ -27,7 +27,8 @@ const els = {
     moveBtns: document.querySelectorAll('.move-btn'),
     activeBotName: document.getElementById('activeBotName'),
     sidebar: document.getElementById('sidebar'),
-    sidebarToggle: document.getElementById('sidebarToggle')
+    sidebarToggle: document.getElementById('sidebarToggle'),
+    healthMonitor: document.getElementById('healthMonitor')
 };
 
 // --- MOBILE UI ---
@@ -234,6 +235,30 @@ socket.on('ghost-status', (data) => {
     } else {
         els.ghostStatus.style.color = '#ff0000';
     }
+});
+
+socket.on('health-update', (metrics) => {
+    els.healthMonitor.innerHTML = '';
+    Object.keys(metrics).forEach(id => {
+        const m = metrics[id];
+        const card = document.createElement('div');
+        card.className = `health-card ${m.status.toLowerCase()}`;
+        card.innerHTML = `
+            <div class="bot-name">
+                ${id}
+                <span class="mode-badge">${m.mode}</span>
+            </div>
+            <div class="metric">
+                <span>Status</span>
+                <span>${m.status}</span>
+            </div>
+            <div class="metric">
+                <span>Latency</span>
+                <span>${m.latency}ms</span>
+            </div>
+        `;
+        els.healthMonitor.appendChild(card);
+    });
 });
 
 els.stopBtn.onclick = () => {

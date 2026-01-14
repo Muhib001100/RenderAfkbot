@@ -411,22 +411,25 @@ app.get('/ping', (req, res) => {
 });
 
 
-// UPTIME ROBOT ENDPOINT
-app.get('/', (req, res) => {
-    res.send('MineBot Manager is Running!');
-});
-
-app.get('/ping', (req, res) => {
-    res.status(200).send('Pong!');
-});
-
 // SELF PINGER (Aggressive - 3s)
 setInterval(() => {
     // Only ping if server is actually listening
     if (server.listening) {
         http.get(`http://localhost:${PORT}/ping`).on('error', (err) => { });
     }
-}, 3000); // Ping every 3 seconds
+
+    // BROADCAST BOT HEALTH METRICS
+    const metrics = {};
+    Object.keys(bots).forEach(id => {
+        const b = bots[id];
+        metrics[id] = {
+            status: b.entity ? 'Online' : 'Offline',
+            latency: b.player?.ping || 0,
+            mode: b.ultraLiteMode ? 'ULTRA' : (b.liteMode ? 'LITE' : 'NORMAL')
+        };
+    });
+    io.emit('health-update', metrics);
+}, 3000); // 3 seconds (matched with self-pinger)
 
 const PORT = 5000;
 server.listen(PORT, '0.0.0.0', () => {
