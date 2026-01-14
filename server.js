@@ -230,26 +230,30 @@ function createBot(botId, config) {
         agent: agent // Apply Proxy agent
     };
 
-    // ULTRA LITE MODE - Disable all heavy internal systems
-    if (config.ultraLiteMode) {
-        botOptions.loadInternalPlugins = false;
-    }
-
     const bot = mineflayer.createBot(botOptions);
 
-    // If internal plugins were disabled, load ONLY the essentials
+    // ULTRA LITE MODE v2 - Surgical removal of heavy listeners
     if (config.ultraLiteMode) {
-        // Load only what's needed for basic connection and chat
-        bot.loadPlugin(require('mineflayer/lib/plugins/kick'));
-        bot.loadPlugin(require('mineflayer/lib/plugins/chat'));
-        bot.loadPlugin(require('mineflayer/lib/plugins/spawn_event'));
-        bot.loadPlugin(require('mineflayer/lib/plugins/resource_pack'));
-        // NOTE: No chunks, No entities, No physics = 0 CPU Usage
-        console.log(`[${botId}] ULTRA LITE MODE: Entity & World tracking DISABLED.`);
+        // Wait for bot to initialize, then strip the expensive packet handlers
+        bot.on('inject_allowed', () => {
+            const heavyPackets = [
+                'map_chunk', 'entity_velocity', 'entity_look', 'entity_move',
+                'entity_move_look', 'entity_teleport', 'entity_head_look',
+                'entity_metadata', 'entity_update_attributes', 'entity_equipment',
+                'rel_entity_move', 'entity_destroy', 'spawn_entity',
+                'spawn_entity_living', 'spawn_entity_painting',
+                'spawn_entity_experience_orb', 'multi_block_change', 'block_change'
+            ];
+
+            heavyPackets.forEach(p => {
+                bot._client.removeAllListeners(p);
+            });
+            console.log(`[${botId}] ULTRA LITE v2: Surgical removal of Chunks/Entities complete. 0% CPU AFK Mode Active.`);
+        });
     }
 
     // LITE MODE - Disable Pathfinder to save massive CPU
-    if (!config.liteMode) {
+    if (!config.liteMode && !config.ultraLiteMode) {
         bot.loadPlugin(pathfinder);
     }
 
