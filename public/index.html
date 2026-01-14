@@ -64,8 +64,17 @@
                             </select>
                         </div>
                         <div class="field" style="margin-top:10px;">
-                            <label>SOCKS5 Proxy (Optional)</label>
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                SOCKS5 Proxy (Optional)
+                                <span id="proxyCheck" style="color:var(--success); display:none;">✔ Saved</span>
+                            </label>
                             <input type="text" id="proxy" placeholder="user:pass@ip:port or ip:port">
+                            <div style="display:flex; justify-content:space-between; margin-top:5px;">
+                                <button id="testProxyBtn" class="btn-small"
+                                    style="background:var(--accent); color:white; width:auto; padding:2px 8px;">Test
+                                    Proxy</button>
+                                <span id="testProxyStatus" style="font-size:11px; color:var(--text-muted);"></span>
+                            </div>
                         </div>
                         <div class="field"
                             style="margin-top:10px; background:rgba(255,255,255,0.05); padding:8px; border-radius:6px;">

@@ -118,6 +118,24 @@ io.on('connection', (socket) => {
     });
 
     // AGGRESSIVE KEEP-ALIVE (When Tab Closes)
+    // --- PROXY TESTER ---
+    socket.on('test-proxy', async (proxyStr) => {
+        try {
+            const proxyUrl = proxyStr.startsWith('socks5://') ? proxyStr : `socks5://${proxyStr}`;
+            const agent = new SocksProxyAgent(proxyUrl);
+
+            // Try to connect to a reliable endpoint
+            const testHost = 'http://google.com';
+            http.get(testHost, { agent }, (res) => {
+                socket.emit('proxy-test-result', { success: true });
+            }).on('error', (err) => {
+                socket.emit('proxy-test-result', { success: false, error: err.message });
+            });
+        } catch (e) {
+            socket.emit('proxy-test-result', { success: false, error: e.message });
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log("Client Disconnected (Tab Closed). Triggering Anti-Sleep...");
         // Immediate Self-Ping to prevent Replit Sleep
@@ -215,6 +233,7 @@ function createBot(botId, config) {
             const proxyUrl = config.proxy.startsWith('socks5://') ? config.proxy : `socks5://${config.proxy}`;
             agent = new SocksProxyAgent(proxyUrl);
             console.log(`[${botId}] Using Proxy: ${config.proxy.includes('@') ? '***@' + config.proxy.split('@')[1] : config.proxy}`);
+            io.emit('log', { bot: botId, msg: `🛡️ Routing through Proxy: ${config.proxy.includes('@') ? '***@' + config.proxy.split('@')[1] : config.proxy}` });
         } catch (e) {
             console.error(`[${botId}] Proxy Error: ${e.message}`);
         }

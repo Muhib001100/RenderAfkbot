@@ -15,9 +15,12 @@ const els = {
     liteMode: document.getElementById('liteMode'), // New
     ultraLiteMode: document.getElementById('ultraLiteMode'), // New
     proxy: document.getElementById('proxy'), // New
+    proxyCheck: document.getElementById('proxyCheck'), // New
     replitUrl: document.getElementById('replitUrl'), // New
     ghostConnectBtn: document.getElementById('ghostConnectBtn'), // New
     ghostStatus: document.getElementById('ghostStatus'), // New
+    testProxyBtn: document.getElementById('testProxyBtn'), // New
+    testProxyStatus: document.getElementById('testProxyStatus'), // New
     startBtn: document.getElementById('startBtn'),
     stopBtn: document.getElementById('stopBtn'),
     botList: document.getElementById('botList'),
@@ -145,6 +148,46 @@ document.getElementById('addBotBtn').onclick = () => {
 };
 
 function saveConfig() { localStorage.setItem('minebot_config', JSON.stringify(savedBots)); }
+
+// Proxy Persistence
+if (els.proxy) {
+    const savedProxy = localStorage.getItem('minebot_proxy');
+    if (savedProxy) {
+        els.proxy.value = savedProxy;
+        els.proxyCheck.style.display = 'inline';
+    }
+
+    els.proxy.oninput = () => {
+        localStorage.setItem('minebot_proxy', els.proxy.value.trim());
+        if (els.proxy.value.trim()) {
+            els.proxyCheck.style.display = 'inline';
+            els.proxyCheck.textContent = '✔ Saved';
+        } else {
+            els.proxyCheck.style.display = 'none';
+        }
+    };
+}
+
+// Proxy Tester
+if (els.testProxyBtn) {
+    els.testProxyBtn.onclick = () => {
+        const proxyStr = els.proxy.value.trim();
+        if (!proxyStr) return alert("Enter a proxy first!");
+
+        els.testProxyBtn.disabled = true;
+        els.testProxyStatus.textContent = "Testing...";
+        els.testProxyStatus.style.color = "var(--text-muted)";
+
+        socket.emit('test-proxy', proxyStr);
+    };
+}
+
+socket.on('proxy-test-result', (data) => {
+    els.testProxyBtn.disabled = false;
+    els.testProxyStatus.textContent = data.success ? "✔ Working!" : "✘ Failed";
+    els.testProxyStatus.style.color = data.success ? "var(--success)" : "var(--error)";
+    if (!data.success && data.error) console.error("Proxy Test Error:", data.error);
+});
 
 // --- LOGGING SYSTEM ---
 const MAX_LOGS = 200;
