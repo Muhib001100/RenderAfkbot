@@ -257,14 +257,26 @@ io.on('connection', (socket) => {
 });
 
 function createBot(botId, config) {
+    // Proxy Rotation Logic
+    let proxyList = [];
+    if (config.proxy) {
+        proxyList = config.proxy.split(',').map(p => p.trim()).filter(p => p.length > 0);
+    }
+
+    // Initialize rotation index if not exists
+    if (config.proxyIndex === undefined) config.proxyIndex = 0;
+
+    // Pick current proxy
+    const currentProxy = proxyList.length > 0 ? proxyList[config.proxyIndex % proxyList.length] : null;
+
     let agent;
-    if (config.proxy && config.proxy.includes(':')) {
+    if (currentProxy && currentProxy.includes(':')) {
         try {
-            // Support user:pass@ip:port or just ip:port
-            const proxyUrl = config.proxy.startsWith('socks5://') ? config.proxy : `socks5://${config.proxy}`;
+            const proxyUrl = currentProxy.startsWith('socks5://') ? currentProxy : `socks5://${currentProxy}`;
             agent = new SocksProxyAgent(proxyUrl);
-            console.log(`[${botId}] Using Proxy: ${config.proxy.includes('@') ? '***@' + config.proxy.split('@')[1] : config.proxy}`);
-            io.emit('log', { bot: botId, msg: `🛡️ Routing through Proxy: ${config.proxy.includes('@') ? '***@' + config.proxy.split('@')[1] : config.proxy}` });
+            const safeProxy = currentProxy.includes('@') ? '***@' + currentProxy.split('@')[1] : currentProxy;
+            console.log(`[${botId}] Proxy [${(config.proxyIndex % proxyList.length) + 1}/${proxyList.length}]: ${safeProxy}`);
+            io.emit('log', { bot: botId, msg: `🛡️ Routing via Proxy [${(config.proxyIndex % proxyList.length) + 1}/${proxyList.length}]: ${safeProxy}` });
         } catch (e) {
             console.error(`[${botId}] Proxy Error: ${e.message}`);
         }
@@ -275,11 +287,11 @@ function createBot(botId, config) {
         port: config.port,
         username: config.username,
         version: config.version === 'auto' ? false : config.version,
-        auth: 'offline', // Cracked server support
+        auth: 'offline',
         checkTimeoutInterval: 180000,
-        viewDistance: config.viewDistance || 'tiny', // Configurable
+        viewDistance: config.viewDistance || 'tiny',
         hideErrors: false,
-        agent: agent // Apply Proxy agent
+        agent: agent
     };
 
     const bot = mineflayer.createBot(botOptions);
@@ -433,9 +445,14 @@ function createBot(botId, config) {
 
     bot.on('end', (reason) => {
         if (bot.afkInterval) clearInterval(bot.afkInterval);
-        if (bot.heartbeat) clearInterval(bot.heartbeat); // Clear Heartbeat
+        if (bot.heartbeat) clearInterval(bot.heartbeat);
         io.emit('bot-status', { id: botId, status: 'Offline' });
         io.emit('log', { bot: botId, msg: `Disconnected: ${reason || 'Unknown'}` });
+
+        // Rotate proxy for next attempt
+        if (config.proxy && config.proxy.includes(',')) {
+            config.proxyIndex = (config.proxyIndex || 0) + 1;
+        }
 
         delete bots[botId];
 
