@@ -14,6 +14,9 @@ const els = {
     viewDistance: document.getElementById('viewDistance'), // New
     liteMode: document.getElementById('liteMode'), // New
     proxy: document.getElementById('proxy'), // New
+    replitUrl: document.getElementById('replitUrl'), // New
+    ghostConnectBtn: document.getElementById('ghostConnectBtn'), // New
+    ghostStatus: document.getElementById('ghostStatus'), // New
     startBtn: document.getElementById('startBtn'),
     stopBtn: document.getElementById('stopBtn'),
     botList: document.getElementById('botList'),
@@ -212,6 +215,22 @@ socket.on('status', (data) => {
         els.startBtn.disabled = false;
         els.stopBtn.disabled = true;
         els.startBtn.textContent = "Start Selected";
+    }
+});
+
+els.ghostConnectBtn.onclick = () => {
+    const url = els.replitUrl.value.trim();
+    if (!url) return alert("Please enter a Replit URL");
+    socket.emit('ghost-connect', url);
+    els.ghostStatus.textContent = "Status: Connecting...";
+};
+
+socket.on('ghost-status', (data) => {
+    els.ghostStatus.textContent = `Status: ${data.msg}`;
+    if (data.msg === 'CONNECTED') {
+        els.ghostStatus.style.color = '#00ff00';
+    } else {
+        els.ghostStatus.style.color = '#ff0000';
     }
 });
 

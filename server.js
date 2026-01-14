@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { SocksProxyAgent } = require('socks-proxy-agent');
+const ioClient = require('socket.io-client');
 
 const app = express();
 const server = http.createServer(app);
@@ -86,6 +87,33 @@ io.on('connection', (socket) => {
         });
         io.emit('status', { msg: 'All bots stopped.' });
         io.emit('bot-status-all', { status: 'Offline' });
+    });
+
+    // --- GHOST BROWSER (Keep Replit Awake) ---
+    let ghostSocket = null;
+    socket.on('ghost-connect', (targetUrl) => {
+        console.log(`Ghost Browser attempting to connect to: ${targetUrl}`);
+        if (ghostSocket) ghostSocket.close();
+
+        ghostSocket = ioClient(targetUrl, {
+            reconnection: true,
+            reconnectionAttempts: Infinity
+        });
+
+        ghostSocket.on('connect', () => {
+            console.log("Ghost Browser CONNECTED to Replit!");
+            socket.emit('ghost-status', { msg: 'CONNECTED' });
+        });
+
+        ghostSocket.on('disconnect', () => {
+            console.log("Ghost Browser DISCONNECTED from Replit.");
+            socket.emit('ghost-status', { msg: 'DISCONNECTED' });
+        });
+
+        ghostSocket.on('connect_error', (err) => {
+            console.log(`Ghost Browser ERROR: ${err.message}`);
+            socket.emit('ghost-status', { msg: `ERROR: ${err.message}` });
+        });
     });
 
     // AGGRESSIVE KEEP-ALIVE (When Tab Closes)
