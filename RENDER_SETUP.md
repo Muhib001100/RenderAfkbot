@@ -11,7 +11,7 @@ Render is great because it offers **Singapore** servers, which are very fast for
 ## Step 2: Create a New Web Service
 1.  In your dashboard, click **"New +"** and select **"Web Service"**.
 2.  Choose **"Build and deploy from a Git repository"**.
-3.  Connect your GitHub repository: `Muhib001100/MinecraftAFKBot`.
+3.  Connect your GitHub repository: `Muhib001100/RenderAfkbot`.
 
 ## Step 3: Configure settings
 Fill in the fields exactly like this:
