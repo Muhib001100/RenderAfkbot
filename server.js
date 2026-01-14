@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const net = require('net');
 const { Server } = require('socket.io');
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
@@ -123,15 +124,28 @@ io.on('connection', (socket) => {
         try {
             const proxyUrl = proxyStr.startsWith('socks5://') ? proxyStr : `socks5://${proxyStr}`;
             const agent = new SocksProxyAgent(proxyUrl);
+            const safeProxy = proxyStr.includes('@') ? '***@' + proxyStr.split('@')[1] : proxyStr;
 
-            // Try to connect to a reliable endpoint
-            const testHost = 'http://google.com';
-            http.get(testHost, { agent }, (res) => {
+            console.log(`[Proxy Test] Starting test for: ${safeProxy}`);
+
+            const req = http.get('http://1.1.1.1', { agent, timeout: 5000 }, (res) => {
+                console.log(`[Proxy Test] SUCCESS for ${safeProxy}`);
                 socket.emit('proxy-test-result', { success: true });
-            }).on('error', (err) => {
+            });
+
+            req.on('error', (err) => {
+                console.error(`[Proxy Test] FAILED for ${safeProxy}: ${err.message}`);
                 socket.emit('proxy-test-result', { success: false, error: err.message });
             });
+
+            req.on('timeout', () => {
+                req.destroy();
+                console.error(`[Proxy Test] TIMEOUT for ${safeProxy}`);
+                socket.emit('proxy-test-result', { success: false, error: 'Connection Timeout' });
+            });
+
         } catch (e) {
+            console.error(`[Proxy Test] CRITICAL ERROR: ${e.message}`);
             socket.emit('proxy-test-result', { success: false, error: e.message });
         }
     });
