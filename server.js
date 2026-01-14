@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
+const { SocksProxyAgent } = require('socks-proxy-agent');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,14 +23,14 @@ io.on('connection', (socket) => {
     socket.on('start-bots', (data) => {
         // New Format: { global: {host, port, version, afkInterval, viewDistance}, bots: [] }
 
-        const { host, port, version, afkInterval, viewDistance, liteMode } = data.global;
+        const { host, port, version, afkInterval, viewDistance, liteMode, proxy } = data.global;
         // Handle 0 explicitly
         let jumpInterval = parseInt(afkInterval);
         if (isNaN(jumpInterval)) jumpInterval = 30000;
         let vDist = viewDistance || 'tiny';
         if (!isNaN(vDist)) vDist = parseInt(vDist);
 
-        console.log(`Starting ${data.bots.length} bots on ${host}... (AFK: ${jumpInterval}ms, View: ${vDist}, Lite: ${!!liteMode})`);
+        console.log(`Starting ${data.bots.length} bots on ${host}... (AFK: ${jumpInterval}ms, View: ${vDist}, Lite: ${!!liteMode}, Proxy: ${proxy || 'None'})`);
 
         data.bots.forEach((botConfig, index) => {
             // Delay each join by 8 SECONDS
@@ -53,7 +54,8 @@ io.on('connection', (socket) => {
                     commands: botConfig.commands || [],
                     afkInterval: jumpInterval,
                     viewDistance: vDist,
-                    liteMode: !!liteMode
+                    liteMode: !!liteMode,
+                    proxy: proxy // Pass Proxy
                 };
 
                 if (bots[botConfig.name]) return; // Already running
@@ -177,6 +179,16 @@ io.on('connection', (socket) => {
 });
 
 function createBot(botId, config) {
+    let agent;
+    if (config.proxy && config.proxy.includes(':')) {
+        try {
+            agent = new SocksProxyAgent(`socks5://${config.proxy}`);
+            console.log(`[${botId}] Using Proxy: ${config.proxy}`);
+        } catch (e) {
+            console.error(`[${botId}] Proxy Error: ${e.message}`);
+        }
+    }
+
     const bot = mineflayer.createBot({
         host: config.host,
         port: config.port,
@@ -185,7 +197,8 @@ function createBot(botId, config) {
         auth: 'offline', // Cracked server support
         checkTimeoutInterval: 180000,
         viewDistance: config.viewDistance || 'tiny', // Configurable
-        hideErrors: false
+        hideErrors: false,
+        agent: agent // Apply Proxy agent
     });
 
     // LITE MODE - Disable Pathfinder to save massive CPU

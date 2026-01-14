@@ -13,6 +13,7 @@
         "express": "^4.22.1",
         "mineflayer": "^4.25.0",
         "mineflayer-pathfinder": "^2.4.5",
-        "socket.io": "^4.8.3"
+        "socket.io": "^4.8.3",
+        "socks-proxy-agent": "^8.0.0"
     }
 }

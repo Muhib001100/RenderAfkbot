@@ -13,6 +13,7 @@ const els = {
     afkInterval: document.getElementById('afkInterval'), // New
     viewDistance: document.getElementById('viewDistance'), // New
     liteMode: document.getElementById('liteMode'), // New
+    proxy: document.getElementById('proxy'), // New
     startBtn: document.getElementById('startBtn'),
     stopBtn: document.getElementById('stopBtn'),
     botList: document.getElementById('botList'),
@@ -198,7 +199,8 @@ els.startBtn.onclick = () => {
             version: els.version.value,
             afkInterval: els.afkInterval.value, // Pass Config
             viewDistance: els.viewDistance.value || 'tiny',
-            liteMode: els.liteMode.checked // Pass Flag
+            liteMode: els.liteMode.checked, // Pass Flag
+            proxy: els.proxy.value.trim() // Pass Proxy
         },
         bots: toStart
     });
