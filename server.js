@@ -252,6 +252,14 @@ function createBot(botId, config) {
         });
     }
 
+    // Manual Latency Tracker
+    bot.lastKeepAlive = Date.now();
+    bot.latency = 0;
+    bot._client.on('keep_alive', () => {
+        bot.latency = Date.now() - bot.lastKeepAlive;
+        bot.lastKeepAlive = Date.now();
+    });
+
     // LITE MODE - Disable Pathfinder to save massive CPU
     if (!config.liteMode && !config.ultraLiteMode) {
         bot.loadPlugin(pathfinder);
@@ -424,7 +432,7 @@ setInterval(() => {
         const b = bots[id];
         metrics[id] = {
             status: b.entity ? 'Online' : 'Offline',
-            latency: b.player?.ping || 0,
+            latency: b.latency || b.player?.ping || 0,
             mode: b.ultraLiteMode ? 'ULTRA' : (b.liteMode ? 'LITE' : 'NORMAL')
         };
     });
