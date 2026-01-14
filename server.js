@@ -56,6 +56,7 @@ io.on('connection', (socket) => {
                     afkInterval: jumpInterval,
                     viewDistance: vDist,
                     liteMode: !!liteMode,
+                    ultraLiteMode: !!data.global.ultraLiteMode, // Pass Ultra Lite
                     proxy: proxy // Pass Proxy
                 };
 
@@ -217,7 +218,7 @@ function createBot(botId, config) {
         }
     }
 
-    const bot = mineflayer.createBot({
+    const botOptions = {
         host: config.host,
         port: config.port,
         username: config.username,
@@ -227,7 +228,25 @@ function createBot(botId, config) {
         viewDistance: config.viewDistance || 'tiny', // Configurable
         hideErrors: false,
         agent: agent // Apply Proxy agent
-    });
+    };
+
+    // ULTRA LITE MODE - Disable all heavy internal systems
+    if (config.ultraLiteMode) {
+        botOptions.loadInternalPlugins = false;
+    }
+
+    const bot = mineflayer.createBot(botOptions);
+
+    // If internal plugins were disabled, load ONLY the essentials
+    if (config.ultraLiteMode) {
+        // Load only what's needed for basic connection and chat
+        bot.loadPlugin(require('mineflayer/lib/plugins/kick'));
+        bot.loadPlugin(require('mineflayer/lib/plugins/chat'));
+        bot.loadPlugin(require('mineflayer/lib/plugins/spawn_event'));
+        bot.loadPlugin(require('mineflayer/lib/plugins/resource_pack'));
+        // NOTE: No chunks, No entities, No physics = 0 CPU Usage
+        console.log(`[${botId}] ULTRA LITE MODE: Entity & World tracking DISABLED.`);
+    }
 
     // LITE MODE - Disable Pathfinder to save massive CPU
     if (!config.liteMode) {
