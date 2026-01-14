@@ -34,8 +34,20 @@ io.on('connection', (socket) => {
         data.bots.forEach((botConfig, index) => {
             // Delay each join by 8 SECONDS
             setTimeout(() => {
+                let finalHost = host;
+                let finalPort = port || 25565;
+
+                // Support host:port format
+                if (host.includes(':')) {
+                    const parts = host.split(':');
+                    finalHost = parts[0];
+                    finalPort = parseInt(parts[1]) || 25565;
+                }
+
                 const fullConfig = {
-                    host, port, version: version === 'auto' ? false : version,
+                    host: finalHost,
+                    port: finalPort,
+                    version: version === 'auto' ? false : version,
                     username: botConfig.name,
                     reconnect: botConfig.reconnect,
                     commands: botConfig.commands || [],
