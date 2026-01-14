@@ -120,28 +120,45 @@ io.on('connection', (socket) => {
 
     // AGGRESSIVE KEEP-ALIVE (When Tab Closes)
     // --- PROXY TESTER ---
-    socket.on('test-proxy', async (proxyStr) => {
+    socket.on('test-proxy', async (data) => {
+        const { proxyStr, host } = data;
         try {
             const proxyUrl = proxyStr.startsWith('socks5://') ? proxyStr : `socks5://${proxyStr}`;
             const agent = new SocksProxyAgent(proxyUrl);
             const safeProxy = proxyStr.includes('@') ? '***@' + proxyStr.split('@')[1] : proxyStr;
 
-            console.log(`[Proxy Test] Starting test for: ${safeProxy}`);
+            console.log(`[Proxy Test] Stage 1: Auth check for ${safeProxy}`);
 
-            const req = http.get('http://1.1.1.1', { agent, timeout: 5000 }, (res) => {
-                console.log(`[Proxy Test] SUCCESS for ${safeProxy}`);
-                socket.emit('proxy-test-result', { success: true });
-            });
+            // Stage 1: Auth/Internet Check
+            http.get('http://1.1.1.1', { agent, timeout: 5000 }, (res) => {
+                console.log(`[Proxy Test] Stage 1 SUCCESS`);
 
-            req.on('error', (err) => {
-                console.error(`[Proxy Test] FAILED for ${safeProxy}: ${err.message}`);
-                socket.emit('proxy-test-result', { success: false, error: err.message });
-            });
+                // Stage 2: MC Server Check
+                let targetHost = host || 'play.dgnetwork.in';
+                let targetPort = 25565;
+                if (targetHost.includes(':')) {
+                    const parts = targetHost.split(':');
+                    targetHost = parts[0];
+                    targetPort = parseInt(parts[1]) || 25565;
+                }
 
-            req.on('timeout', () => {
-                req.destroy();
-                console.error(`[Proxy Test] TIMEOUT for ${safeProxy}`);
-                socket.emit('proxy-test-result', { success: false, error: 'Connection Timeout' });
+                console.log(`[Proxy Test] Stage 2: Probing ${targetHost}:${targetPort}`);
+                const socket_test = net.connect({ host: targetHost, port: targetPort, agent, timeout: 7000 });
+
+                socket_test.on('connect', () => {
+                    console.log(`[Proxy Test] Stage 2 SUCCESS`);
+                    socket.emit('proxy-test-result', { success: true, stage: 2 });
+                    socket_test.destroy();
+                });
+
+                socket_test.on('error', (err) => {
+                    console.error(`[Proxy Test] Stage 2 FAILED: ${err.message}`);
+                    socket.emit('proxy-test-result', { success: false, error: `Proxy works, but server rejected connection (${err.message})`, stage: 2 });
+                    socket_test.destroy();
+                });
+            }).on('error', (err) => {
+                console.error(`[Proxy Test] Stage 1 FAILED: ${err.message}`);
+                socket.emit('proxy-test-result', { success: false, error: `Proxy Auth Failed: ${err.message}`, stage: 1 });
             });
 
         } catch (e) {

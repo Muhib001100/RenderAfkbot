@@ -174,19 +174,27 @@ if (els.testProxyBtn) {
         const proxyStr = els.proxy.value.trim();
         if (!proxyStr) return alert("Enter a proxy first!");
 
+        const host = els.host.value.trim();
+        const version = els.version.value;
+
         els.testProxyBtn.disabled = true;
         els.testProxyStatus.textContent = "Testing...";
         els.testProxyStatus.style.color = "var(--text-muted)";
 
-        socket.emit('test-proxy', proxyStr);
+        socket.emit('test-proxy', { proxyStr, host });
     };
 }
 
 socket.on('proxy-test-result', (data) => {
     els.testProxyBtn.disabled = false;
-    els.testProxyStatus.textContent = data.success ? "✔ Working!" : "✘ Failed";
-    els.testProxyStatus.style.color = data.success ? "var(--success)" : "var(--error)";
-    if (!data.success && data.error) console.error("Proxy Test Error:", data.error);
+    if (data.success) {
+        els.testProxyStatus.textContent = "✔ Fully Working!";
+        els.testProxyStatus.style.color = "var(--success)";
+    } else {
+        els.testProxyStatus.textContent = `✘ ${data.error}`;
+        els.testProxyStatus.style.color = "var(--error)";
+        console.error("Proxy Test Error:", data.error);
+    }
 });
 
 // --- LOGGING SYSTEM ---
