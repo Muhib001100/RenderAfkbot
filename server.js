@@ -211,8 +211,10 @@ function createBot(botId, config) {
     let agent;
     if (config.proxy && config.proxy.includes(':')) {
         try {
-            agent = new SocksProxyAgent(`socks5://${config.proxy}`);
-            console.log(`[${botId}] Using Proxy: ${config.proxy}`);
+            // Support user:pass@ip:port or just ip:port
+            const proxyUrl = config.proxy.startsWith('socks5://') ? config.proxy : `socks5://${config.proxy}`;
+            agent = new SocksProxyAgent(proxyUrl);
+            console.log(`[${botId}] Using Proxy: ${config.proxy.includes('@') ? '***@' + config.proxy.split('@')[1] : config.proxy}`);
         } catch (e) {
             console.error(`[${botId}] Proxy Error: ${e.message}`);
         }
